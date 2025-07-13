@@ -242,5 +242,5 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
 The results are complied into the same CSV files,has columns with model name and their surprisal values next to each other for easier comparison. 
 
 
-#Results:
+# Results
 There was slight variations in the surprisal scores from that of cevoli’s. I believe that the reason might be due to varying input data (passage.txt), this passage data was not specified in the cevoli’s paper and was not available in the link as well. The passage that we used were extracted from the original provo corpus data. 
