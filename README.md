@@ -66,7 +66,7 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
 
 
 # Pipeline:
-
+The whole pipeline is sit in a way to easy swap between different LLM models available in HuggingFace Transformer library. The model can be loaded on CPU or GPU according to your preference.
 ## Import libraries 
 	
 	import argparse
