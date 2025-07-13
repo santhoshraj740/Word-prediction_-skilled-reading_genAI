@@ -49,8 +49,9 @@ All three models use byte-level BPE tokenization and were evaluated in inference
 **Disk Space**: At least 10 GB for models and outputs on your C-drive, more if using large models like gpt2-xl or gpt-neo.
 ## Python Environment Setup
 **Create and activate a new conda environment**:
-conda create -n surprisal_env python=3.12 -y
-conda activate surprisal_env
+
+	conda create -n surprisal_env python=3.12 -y
+	conda activate surprisal_env
 
 **Install core packages**:
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
@@ -90,11 +91,11 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
 - Set the model to evaluation mode with model.eval() to avoid gradient tracking and dropout.
 - Tokenizer ensures that input words and tokens align with the vocabulary used during model training.
 
-	def load_model(model_name):
-	    tokenizer = AutoTokenizer.from_pretrained(model_name)
-	    model = AutoModelForCausalLM.from_pretrained(model_name).to(get_device())
-	    model.eval()
-	    return model,tokenizer
+		def load_model(model_name):
+		    tokenizer = AutoTokenizer.from_pretrained(model_name)
+		    model = AutoModelForCausalLM.from_pretrained(model_name).to(get_device())
+		    model.eval()
+		    return model,tokenizer
 
 
 ## Suprisal computation (single token):
@@ -106,23 +107,21 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
 - Surprisal = -log2(p) where p is that probability.
 - This method is simple but can underrepresent surprisal for multi-token words.
 
-	def computing_surprisal(tokenizer, model,context,target_word):
-	    device = get_device()
-	    input_ids = tokenizer.encode(context, return_tensors='pt').to(device)
-	    with torch.no_grad():
-	        output = model(input_ids)
-	        logits = output.logits[0,-1,:]
-	        prob = torch.softmax(logits,dim=-1).cpu().numpy()
-
-
-	    target_ids = tokenizer.encode(" " + target_word.strip(),add_special_tokens=False)
-	    if not target_ids:
-	        return float("inf")
-	    token_id = target_ids[0]
-	    p = prob[token_id]
-	    surprisal = -np.log2(p + 1e-20)
-	    entropy = -np.sum(prob * np.log2(prob + 1e-20))
-	return surprisal , entropy
+		def computing_surprisal(tokenizer, model,context,target_word):
+		    device = get_device()
+		    input_ids = tokenizer.encode(context, return_tensors='pt').to(device)
+		    with torch.no_grad():
+		        output = model(input_ids)
+		        logits = output.logits[0,-1,:]
+		        prob = torch.softmax(logits,dim=-1).cpu().numpy()
+		    target_ids = tokenizer.encode(" " + target_word.strip(),add_special_tokens=False)
+		    if not target_ids:
+		        return float("inf")
+		    token_id = target_ids[0]
+		    p = prob[token_id]
+		    surprisal = -np.log2(p + 1e-20)
+		    entropy = -np.sum(prob * np.log2(prob + 1e-20))
+		return surprisal , entropy
 
 
 ## Batch processing:
@@ -133,42 +132,37 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
 - Append results to a list.
 - Save as CSV for comparison and visualization.
 
-	def file(input_text_path, model_name, output_csv_path):
-	    model, tokenizer = load_model(model_name)
-	    results = []
-	
-	    with open(input_text_path, "r", encoding='utf-8') as f:
-	        lines = f.readlines()
-	
-	    word_id = 0 
-	    for sentence_idx, line in enumerate(tqdm(lines)):
-	        words = line.strip().split()
-	        context = ""
-	        for word_idx, word in enumerate(words):
-	            clean_word = word.strip(string.punctuation)
-	            if not clean_word:
-	                continue
-	            if context == "":
-	                context = clean_word
-	                continue
-	
-	            surprisal,entropy = computing_surprisal(tokenizer, model, context, clean_word)
-	
-	            results.append({
-	                "WordID": word_id,
-	                "SentenceNr": sentence_idx + 1,
-	                "WordNr": word_idx + 1,
-	                "Target": clean_word,
-	                "Surprisal": surprisal,
-	                "Entropy": entropy,
-	            })
-	            context += " " + clean_word
-	            word_id += 1
-	
-	    df = pd.DataFrame(results)
-	    df.to_csv(output_csv_path, index=False)
-	    print(f"Results saved to {output_csv_path}")
-	    return df  
+		def file(input_text_path, model_name, output_csv_path):
+		    model, tokenizer = load_model(model_name)
+		    results = []
+		    with open(input_text_path, "r", encoding='utf-8') as f:
+		        lines = f.readlines()
+		    word_id = 0 
+		    for sentence_idx, line in enumerate(tqdm(lines)):
+		        words = line.strip().split()
+		        context = ""
+		        for word_idx, word in enumerate(words):
+		            clean_word = word.strip(string.punctuation)
+		            if not clean_word:
+		                continue
+		            if context == "":
+		                context = clean_word
+		                continue
+		            surprisal,entropy = computing_surprisal(tokenizer, model, context, clean_word)
+		            results.append({
+		                "WordID": word_id,
+		                "SentenceNr": sentence_idx + 1,
+		                "WordNr": word_idx + 1,
+		                "Target": clean_word,
+		                "Surprisal": surprisal,
+		                "Entropy": entropy,
+		            })
+		            context += " " + clean_word
+		            word_id += 1
+		    df = pd.DataFrame(results)
+		    df.to_csv(output_csv_path, index=False)
+		    print(f"Results saved to {output_csv_path}")
+		    return df  
 
 
 ## Model Loop Automation
@@ -178,34 +172,34 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
 - Rename surprisal columns to include the model name.
 - Optionally, merge results into a single file for visual or statistical comparison
 
-	model_list = {
-	    "GPT2": "gpt2",
-	    "GPT2_XL": "gpt2-xl",
-	    "GPTNEO_1.3B": "EleutherAI/gpt-neo-1.3B",
-	}
-	
-	output_dir = "C:/Users/ssr17/next-token/model_outputs"
-	os.makedirs(output_dir, exist_ok=True)
-	
-	final_df = None
-	
-	for model_label, model_name in model_list.items():
-	    print(f"\nRunning model: {model_label}")
-	
-	    output_csv = os.path.join(output_dir, f"surprisal_{model_label}.csv")
-	
-	    df = file(passage_path, model_name, output_csv)
-	
-	    df = df[["WordID", "SentenceNr", "WordNr", "Target", "Surprisal"]]
-	    df = df.rename(columns={"Surprisal": f"{model_label}_Surprisal"})
-	
-	    if final_df is None:
-	        final_df = df
-	    else:
-	        final_df = pd.merge(final_df, df, on=["WordID", "SentenceNr", "WordNr", "Target"], how="outer")
-	
-	final_df.to_csv("C:/Users/ssr17/next-token/all_model_surprisal_comparison.csv", index=False)
-	print("\n All model surprisals saved!")
+		model_list = {
+		    "GPT2": "gpt2",
+		    "GPT2_XL": "gpt2-xl",
+		    "GPTNEO_1.3B": "EleutherAI/gpt-neo-1.3B",
+		}
+		
+		output_dir = "C:/Users/ssr17/next-token/model_outputs"
+		os.makedirs(output_dir, exist_ok=True)
+		
+		final_df = None
+		
+		for model_label, model_name in model_list.items():
+		    print(f"\nRunning model: {model_label}")
+		
+		    output_csv = os.path.join(output_dir, f"surprisal_{model_label}.csv")
+		
+		    df = file(passage_path, model_name, output_csv)
+		
+		    df = df[["WordID", "SentenceNr", "WordNr", "Target", "Surprisal"]]
+		    df = df.rename(columns={"Surprisal": f"{model_label}_Surprisal"})
+		
+		    if final_df is None:
+		        final_df = df
+		    else:
+		        final_df = pd.merge(final_df, df, on=["WordID", "SentenceNr", "WordNr", "Target"], how="outer")
+		
+		final_df.to_csv("C:/Users/ssr17/next-token/all_model_surprisal_comparison.csv", index=False)
+		print("\n All model surprisals saved!")
 
 
 ## For mutitoken surprisal computation:
@@ -219,31 +213,31 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
 - Also calculate mean surprisal and average entropy per token.
 - Better represents surprisal for rare/complex words.
 
-	def compute_surprisal_multitoken(model, tokenizer, context, target_word):
-	    input_ids = tokenizer.encode(context, return_tensors='pt').to(device)
-	    target_ids = tokenizer.encode(" " + target_word, add_special_tokens=False)
-	    if not target_ids:
-	        return float('inf'), 0, 0
-	
-	    surprisal_sum = 0
-	    entropy_total = 0
-	
-	    for tid in target_ids:
-	        with torch.no_grad():
-	            output = model(input_ids)
-	            logits = output.logits[:, -1, :]
-	            probs = torch.softmax(logits, dim=-1)[0].cpu().numpy()
-	
-	        p = probs[tid]
-	        surprisal_sum += -np.log2(p + 1e-20)
-	        entropy_total += -np.sum(probs * np.log2(probs + 1e-20))
-	
-	        tid_tensor = torch.tensor([[tid]]).to(device)
-	        input_ids = torch.cat([input_ids, tid_tensor], dim=1)
-	
-	    mean_surprisal = surprisal_sum / len(target_ids)
-	    mean_entropy = entropy_total / len(target_ids)
-	    return surprisal_sum, mean_surprisal, mean_entropy, len(target_ids)
+		def compute_surprisal_multitoken(model, tokenizer, context, target_word):
+		    input_ids = tokenizer.encode(context, return_tensors='pt').to(device)
+		    target_ids = tokenizer.encode(" " + target_word, add_special_tokens=False)
+		    if not target_ids:
+		        return float('inf'), 0, 0
+		
+		    surprisal_sum = 0
+		    entropy_total = 0
+		
+		    for tid in target_ids:
+		        with torch.no_grad():
+		            output = model(input_ids)
+		            logits = output.logits[:, -1, :]
+		            probs = torch.softmax(logits, dim=-1)[0].cpu().numpy()
+		
+		        p = probs[tid]
+		        surprisal_sum += -np.log2(p + 1e-20)
+		        entropy_total += -np.sum(probs * np.log2(probs + 1e-20))
+		
+		        tid_tensor = torch.tensor([[tid]]).to(device)
+		        input_ids = torch.cat([input_ids, tid_tensor], dim=1)
+		
+		    mean_surprisal = surprisal_sum / len(target_ids)
+		    mean_entropy = entropy_total / len(target_ids)
+		    return surprisal_sum, mean_surprisal, mean_entropy, len(target_ids)
 
 The results are complied into the same CSV files,has columns with model name and their surprisal values next to each other for easier comparison. 
 
