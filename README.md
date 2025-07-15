@@ -65,7 +65,7 @@ If no GPU is available, skip the pytorch-cuda and just install CPU-only PyTorch.
  	conda install jupyter notebook
 
 
-# Pipeline:
+#Model Pipeline:
 The whole pipeline is sit in a way to easy swap between different LLM models available in HuggingFace Transformer library. The model can be loaded on CPU or GPU according to your preference.
 ## Import libraries 
 	
@@ -79,7 +79,7 @@ The whole pipeline is sit in a way to easy swap between different LLM models ava
 	from tqdm import tqdm
 
 
-# Text preprocessing:
+## Text preprocessing:
 - Read passage.txt using open() and .readlines().
 - Strip each line, split into words, and clean punctuation using word.strip(string.punctuation).
 - Maintain WordID, SentenceNr, and WordNr counters to assign unique identifiers.
