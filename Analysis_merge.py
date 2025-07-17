@@ -35,3 +35,32 @@ plt.legend()
 plt.title("Distribution of Surprisal Values")
 plt.xlabel("Surprisal")
 plt.show()
+
+subtlex = pd.read_csv("SUBTLEX-UK.csv") 
+
+subtlex = pd.read_csv("SUBTLEX-UK.csv")
+
+# Select spelling and Zipf frequency, renaming for clarity
+subtlex = subtlex[["Spelling", "LogFreq(Zipf)"]].rename(columns={
+    "Spelling": "Target",
+    "LogFreq(Zipf)": "Freq"
+})
+
+# Standardize text case to lowercase for merging
+subtlex["Target_clean"] = subtlex["Target"].str.lower()
+
+# Merge with your analysis DataFrame
+et_df_aligned = pd.merge(
+    et_df_aligned,
+    subtlex[["Target_clean", "Freq"]],
+    on="Target_clean",
+    how="left"
+)
+
+from pathlib import Path  
+filepath = Path('C:/Users/ssr17/Research project/finalmerge.csv')  
+filepath.parent.mkdir(parents=True, exist_ok=True)  
+et_df_aligned.to_csv(filepath)  
+
+print(et_df_aligned.columns)
+et_df_aligned.head()
